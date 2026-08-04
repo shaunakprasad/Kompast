@@ -1,6 +1,6 @@
 {
-  "name": "Master Plan AI",
-  "description": "An intuitive reasoning task strategist that creates optimized master execution plans based on task importance, length, and context.",
+  "name": "Ontask",
+  "description": "An intuitive AI task strategist and scheduling engine that crafts optimized master execution plans based on energy, deadlines, bedtime schedules, and Google Calendar sync.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
