@@ -1,0 +1,6 @@
+{
+  "name": "Master Plan AI",
+  "description": "An intuitive reasoning task strategist that creates optimized master execution plans based on task importance, length, and context.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
