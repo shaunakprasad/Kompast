@@ -26,7 +26,7 @@ export const PlanAssistantDrawer: React.FC<PlanAssistantDrawerProps> = ({
     {
       id: 'init-1',
       sender: 'ai',
-      text: "Hello! I'm your Master Plan AI Reasoning Assistant. Ask me anything about your task order, time allocations, strategy trade-offs, or ask for custom plan adjustments!",
+      text: "Hello! I'm Northy, your Kompast assistant. Ask me anything about your task order, time allocations, strategy trade-offs, or ask for custom schedule adjustments!",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -101,11 +101,12 @@ export const PlanAssistantDrawer: React.FC<PlanAssistantDrawerProps> = ({
               <Sparkles className="w-4 h-4 text-indigo-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">
-                AI Plan Reasoning Coach
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <span>Northy</span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 font-extrabold px-2 py-0.5 rounded-full border border-amber-500/30">Kompast Guide</span>
               </h3>
               <p className="text-[10px] text-slate-400">
-                Ask rationale questions & customize your strategy
+                Ask schedule rationale & tweak your master strategy
               </p>
             </div>
           </div>

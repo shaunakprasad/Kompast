@@ -41,7 +41,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   return (
     <div 
       id={`task-card-${task.id}`}
-      className="bg-slate-900/90 border border-slate-800 hover:border-slate-700/80 rounded-xl p-4 transition-all shadow-sm hover:shadow-md group"
+      className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/80 rounded-xl p-4 transition-all shadow-xs hover:shadow-md group"
     >
       <div className="flex items-start justify-between gap-3">
         {/* Main info */}
@@ -49,39 +49,39 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <div className="flex items-center flex-wrap gap-2 mb-1.5">
             {getImportanceBadge(task.importance)}
 
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-300 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700/80">
-              <Clock className="w-3 h-3 text-indigo-400" />
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700/80">
+              <Clock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
               {formatMinutes(task.estimatedMinutes)}
             </span>
 
             {task.category && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-950 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800">
                 <Tag className="w-2.5 h-2.5 text-slate-500" />
                 {task.category}
               </span>
             )}
 
             {task.energyLevel && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
-                <BatteryCharging className="w-2.5 h-2.5 text-emerald-400" />
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-950 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800">
+                <BatteryCharging className="w-2.5 h-2.5 text-emerald-500" />
                 {task.energyLevel} energy
               </span>
             )}
           </div>
 
-          <h3 className="text-sm font-semibold text-slate-100 group-hover:text-indigo-200 transition-colors">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-200 transition-colors">
             {task.title}
           </h3>
 
           {task.description && (
-            <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
               {task.description}
             </p>
           )}
 
           {task.deadline && (
-            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-amber-300/90 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
-              <AlertCircle className="w-3 h-3 text-amber-400" />
+            <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300/90 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-500/20">
+              <AlertCircle className="w-3 h-3 text-amber-500" />
               Deadline: {task.deadline}
             </div>
           )}
@@ -92,7 +92,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <button
             id={`btn-edit-task-${task.id}`}
             onClick={() => onEdit(task)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
             title="Edit task"
           >
             <Edit2 className="w-3.5 h-3.5" />
@@ -100,7 +100,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <button
             id={`btn-delete-task-${task.id}`}
             onClick={() => onDelete(task.id)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
             title="Delete task"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -110,14 +110,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
       {/* Subtasks Accordion */}
       {task.subtasks && task.subtasks.length > 0 && (
-        <div className="mt-3 pt-2.5 border-t border-slate-800/80">
+        <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800/80">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full flex items-center justify-between text-xs font-medium text-slate-400 hover:text-slate-200 py-0.5"
+            className="w-full flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 py-0.5"
           >
             <span>Subtasks ({task.subtasks.filter(s => s.completed).length}/{task.subtasks.length})</span>
             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
+
 
           {isExpanded && (
             <div className="mt-2 space-y-1.5 pl-1">

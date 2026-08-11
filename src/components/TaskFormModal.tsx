@@ -140,12 +140,12 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 id="select-task-importance"
                 value={importance}
                 onChange={(e) => setImportance(e.target.value as TaskImportance)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
-                <option value="low">Low Importance</option>
-                <option value="medium">Medium Importance</option>
-                <option value="high">High Importance</option>
-                <option value="critical">Critical / Blocker</option>
+                <option value="low" className="bg-slate-950 text-slate-100">Low Importance</option>
+                <option value="medium" className="bg-slate-950 text-slate-100">Medium Importance</option>
+                <option value="high" className="bg-slate-950 text-slate-100">High Importance</option>
+                <option value="critical" className="bg-slate-950 text-slate-100">Critical / Blocker</option>
               </select>
             </div>
 
@@ -194,11 +194,11 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 id="select-task-energy"
                 value={energyLevel}
                 onChange={(e) => setEnergyLevel(e.target.value as TaskEnergyLevel)}
-                className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-indigo-500"
+                className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
-                <option value="low">Low Energy</option>
-                <option value="medium">Med Energy</option>
-                <option value="high">High Energy</option>
+                <option value="low" className="bg-slate-950 text-slate-100">Low Energy</option>
+                <option value="medium" className="bg-slate-950 text-slate-100">Med Energy</option>
+                <option value="high" className="bg-slate-950 text-slate-100">High Energy</option>
               </select>
             </div>
 

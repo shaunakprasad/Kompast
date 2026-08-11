@@ -26,6 +26,7 @@ export interface GoogleCalendarEvent {
 
 export type AppTheme = 'dark' | 'light';
 
+
 export interface SubTask {
   id: string;
   title: string;

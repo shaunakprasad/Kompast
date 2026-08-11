@@ -19,8 +19,8 @@ import {
   Moon
 } from 'lucide-react';
 
-import { Task, MasterPlan, MasterPlanStrategy, BedtimeSchedule, GoogleCalendarEvent, AppTheme } from './types';
-import { SAMPLE_TASKS } from './data/presetTasks';
+import { Task, MasterPlan, MasterPlanStrategy, BedtimeSchedule, GoogleCalendarEvent, AppTheme, LogoId } from './types';
+import { SAMPLE_TASKS, STUDENT_TASKS, WORKER_9TO5_TASKS } from './data/presetTasks';
 import { calculateFallbackMasterPlan } from './utils/fallbackPlanner';
 import { DEFAULT_BEDTIME_SCHEDULE, getTodayDayOfWeek, formatTime24to12 } from './data/defaultBedtime';
 
@@ -36,25 +36,29 @@ import { FocusRunnerModal } from './components/FocusRunnerModal';
 import { PlanAssistantDrawer } from './components/PlanAssistantDrawer';
 import { BedtimeModal } from './components/BedtimeModal';
 import { CalendarConnectModal } from './components/CalendarConnectModal';
+import { LogoSelectorModal } from './components/LogoSelectorModal';
 
 export default function App() {
-  // Theme state
-  const [theme, setTheme] = useState<AppTheme>(() => {
-    return (localStorage.getItem('master_plan_theme') as AppTheme) || 'dark';
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
+  }, []);
+
+  const [selectedLogoId, setSelectedLogoId] = useState<LogoId>(() => {
+    return (localStorage.getItem('kompast_selected_logo') as LogoId) || 'pulse';
   });
 
-  useEffect(() => {
-    localStorage.setItem('master_plan_theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    }
-  }, [theme]);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState<boolean>(() => {
+    return !localStorage.getItem('kompast_selected_logo');
+  });
 
-  // Bedtime Schedule state & startup modal prompt
+  const handleSelectLogo = (logoId: LogoId) => {
+    setSelectedLogoId(logoId);
+    localStorage.setItem('kompast_selected_logo', logoId);
+  };
+
+
+  // Bedtime Schedule state
   const [bedtimeSchedule, setBedtimeSchedule] = useState<BedtimeSchedule>(() => {
     try {
       const saved = localStorage.getItem('master_plan_bedtime_schedule');
@@ -66,15 +70,6 @@ export default function App() {
 
   const [isBedtimeModalOpen, setIsBedtimeModalOpen] = useState<boolean>(false);
   const [isFirstTimeBedtime, setIsFirstTimeBedtime] = useState<boolean>(false);
-
-  // Check on startup if bedtime has been configured
-  useEffect(() => {
-    const saved = localStorage.getItem('master_plan_bedtime_schedule');
-    if (!saved) {
-      setIsFirstTimeBedtime(true);
-      setIsBedtimeModalOpen(true);
-    }
-  }, []);
 
   // Google Calendar Integration state
   const [calendarTokens, setCalendarTokens] = useState<any>(() => {
@@ -95,13 +90,12 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
       const saved = localStorage.getItem('master_plan_tasks');
-      return saved ? JSON.parse(saved) : SAMPLE_TASKS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return SAMPLE_TASKS;
+      return [];
     }
   });
 
-  const [strategy, setStrategy] = useState<MasterPlanStrategy>('balanced');
   const [startTime, setStartTime] = useState<string>('09:00 AM');
 
   const [currentPlan, setCurrentPlan] = useState<MasterPlan | null>(() => {
@@ -130,6 +124,7 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [notification, setNotification] = useState<string | null>(null);
 
   const showNotification = (msg: string) => {
@@ -234,10 +229,25 @@ export default function App() {
     showNotification('Disconnected Google Calendar.');
   };
 
-  // Sync to local storage
+  // Sync to local storage & clean up deleted tasks from currentPlan
   useEffect(() => {
     try {
       localStorage.setItem('master_plan_tasks', JSON.stringify(tasks));
+
+      // Synchronize currentPlan when tasks change or are deleted
+      if (currentPlan) {
+        const remainingTaskIds = new Set(tasks.map(t => t.id));
+        const updatedPlanTasks = currentPlan.tasks.filter(pt => remainingTaskIds.has(pt.taskId));
+
+        if (updatedPlanTasks.length === 0) {
+          setCurrentPlan(null);
+        } else if (updatedPlanTasks.length !== currentPlan.tasks.length) {
+          setCurrentPlan({
+            ...currentPlan,
+            tasks: updatedPlanTasks
+          });
+        }
+      }
     } catch (e) {
       console.error('LocalStorage write error', e);
     }
@@ -264,6 +274,22 @@ export default function App() {
   }, [completedTaskIds]);
 
   // Task Handlers
+  const handleQuickAddTask = (title: string) => {
+    const newTask: Task = {
+      id: `task-${Date.now()}`,
+      title,
+      description: '',
+      importance: 'medium',
+      estimatedMinutes: 30,
+      status: 'todo',
+      createdAt: new Date().toISOString()
+    };
+    setTasks(prev => [newTask, ...prev]);
+    setEditingTask(newTask);
+    setIsTaskModalOpen(true);
+    showNotification(`Task added! You can edit details below.`);
+  };
+
   const handleSaveTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'status'> & { id?: string }) => {
     if (taskData.id) {
       setTasks(prev => prev.map(t => t.id === taskData.id ? { ...t, ...taskData } : t));
@@ -287,18 +313,28 @@ export default function App() {
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Are you sure you want to clear all tasks in your queue?')) {
-      setTasks([]);
-      setCurrentPlan(null);
-      setCompletedTaskIds(new Set());
-      showNotification('Cleared all tasks.');
-    }
+    setTasks([]);
+    setCurrentPlan(null);
+    setCompletedTaskIds(new Set());
+    showNotification('Cleared all tasks.');
   };
 
   const handleLoadPreset = () => {
     setTasks(SAMPLE_TASKS);
     setCurrentPlan(null);
     showNotification('Loaded sample work tasks.');
+  };
+
+  const handleLoadStudentPreset = () => {
+    setTasks(STUDENT_TASKS);
+    setCurrentPlan(null);
+    showNotification('Loaded Student & Academic sample schedule!');
+  };
+
+  const handleLoadWorkerPreset = () => {
+    setTasks(WORKER_9TO5_TASKS);
+    setCurrentPlan(null);
+    showNotification('Loaded Professional Workday sample schedule!');
   };
 
   const handleBrainDumpImport = (newTasksData: Omit<Task, 'id' | 'createdAt' | 'status'>[]) => {
@@ -339,6 +375,19 @@ export default function App() {
     if (tasks.length === 0) return;
 
     setIsGenerating(true);
+    setGenerationProgress(8);
+
+    const progressInterval = setInterval(() => {
+      setGenerationProgress((prev) => {
+        if (prev >= 98) return 98;
+        let inc = 2;
+        if (prev < 40) inc = Math.floor(Math.random() * 6) + 4;
+        else if (prev < 75) inc = Math.floor(Math.random() * 4) + 2;
+        else if (prev < 90) inc = Math.floor(Math.random() * 2) + 1;
+        else inc = 1;
+        return Math.min(prev + inc, 98);
+      });
+    }, 100);
 
     const today = getTodayDayOfWeek();
     const todayBedtimeCfg = bedtimeSchedule[today] || DEFAULT_BEDTIME_SCHEDULE[today];
@@ -351,7 +400,6 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tasks,
-          strategy,
           startTime,
           calendarEvents: activeCalendarEvents,
           bedtimeLimit
@@ -363,9 +411,9 @@ export default function App() {
       if (response.ok && data.tasks && Array.isArray(data.tasks)) {
         const generatedPlan: MasterPlan = {
           id: `plan-${Date.now()}`,
-          title: `Master Plan (${strategy.toUpperCase()})`,
+          title: `Master Schedule Plan`,
           createdAt: new Date().toISOString(),
-          strategy,
+          strategy: 'balanced',
           tasks: data.tasks,
           executiveSummary: data.executiveSummary || 'AI reasoning optimization completed.',
           keyPrinciples: data.keyPrinciples || [],
@@ -376,21 +424,26 @@ export default function App() {
           bedtimeConstraintAlert: data.bedtimeConstraintAlert
         };
         setCurrentPlan(generatedPlan);
-        showNotification('Master Plan generated with Gemini AI intuitive reasoning!');
+        showNotification('Master Plan generated with Gemini AI!');
       } else {
         // Fallback calculation
-        console.warn('API error or fallback requested, using local intuitive reasoning planner.');
-        const fallbackPlan = calculateFallbackMasterPlan(tasks, strategy, startTime, activeCalendarEvents, bedtimeLimit);
+        console.warn('API error or fallback requested, using local planner.');
+        const fallbackPlan = calculateFallbackMasterPlan(tasks, 'balanced', startTime, activeCalendarEvents, bedtimeLimit);
         setCurrentPlan(fallbackPlan);
-        showNotification('Master Plan calculated using intuitive reasoning engine.');
+        showNotification('Master Plan calculated using local optimization engine.');
       }
     } catch (err: any) {
       console.error('Error calling master plan server endpoint:', err);
-      const fallbackPlan = calculateFallbackMasterPlan(tasks, strategy, startTime, activeCalendarEvents, bedtimeLimit);
+      const fallbackPlan = calculateFallbackMasterPlan(tasks, 'balanced', startTime, activeCalendarEvents, bedtimeLimit);
       setCurrentPlan(fallbackPlan);
-      showNotification('Master Plan calculated using intuitive reasoning engine.');
+      showNotification('Master Plan calculated using local optimization engine.');
     } finally {
-      setIsGenerating(false);
+      clearInterval(progressInterval);
+      setGenerationProgress(100);
+      setTimeout(() => {
+        setIsGenerating(false);
+        setGenerationProgress(0);
+      }, 400);
     }
   };
 
@@ -400,7 +453,7 @@ export default function App() {
       const today = getTodayDayOfWeek();
       const todayBedtimeCfg = bedtimeSchedule[today] || DEFAULT_BEDTIME_SCHEDULE[today];
       const bedtimeLimit = formatTime24to12(todayBedtimeCfg.bedtime);
-      const fallbackPlan = calculateFallbackMasterPlan(tasks, strategy, startTime, calendarEvents, bedtimeLimit);
+      const fallbackPlan = calculateFallbackMasterPlan(tasks, 'balanced', startTime, calendarEvents, bedtimeLimit);
       setCurrentPlan(fallbackPlan);
     }
   }, []);
@@ -441,7 +494,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `MasterPlan_${strategy}_${Date.now()}.md`;
+    a.download = `MasterPlan_${Date.now()}.md`;
     a.click();
     URL.revokeObjectURL(url);
 
@@ -449,11 +502,11 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 dark:bg-slate-950 light:bg-slate-50 text-slate-100 dark:text-slate-100 light:text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white transition-colors">
+    <div className="min-h-screen bg-transparent text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 transition-colors">
       {/* Toast Notification */}
       {notification && (
-        <div id="toast-notification" className="fixed bottom-5 right-5 z-50 bg-indigo-600 text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-2xl border border-indigo-400 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          <Sparkles className="w-4 h-4 text-amber-300" />
+        <div id="toast-notification" className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-600 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-2xl border border-amber-400/50 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-5 duration-200">
+          <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300 animate-spin" />
           <span>{notification}</span>
         </div>
       )}
@@ -467,30 +520,20 @@ export default function App() {
         onLoadPreset={handleLoadPreset}
         onGeneratePlan={handleGeneratePlan}
         isGenerating={isGenerating}
+        generationProgress={generationProgress}
         hasTasks={tasks.length > 0}
         currentPlan={currentPlan}
-        theme={theme}
-        onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
         onOpenBedtime={() => { setIsFirstTimeBedtime(false); setIsBedtimeModalOpen(true); }}
         onOpenCalendar={() => setIsCalendarModalOpen(true)}
         isCalendarConnected={!!calendarTokens}
+        selectedLogoId={selectedLogoId}
+        onOpenLogoSelector={() => setIsLogoModalOpen(true)}
       />
 
       {/* Main Content Area */}
       <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Strategy Selector Row */}
+        {/* Schedule Config Bar */}
         <StrategySelector
-          selectedStrategy={strategy}
-          onSelectStrategy={(newStrategy) => {
-            setStrategy(newStrategy);
-            if (tasks.length > 0) {
-              const today = getTodayDayOfWeek();
-              const todayBedtimeCfg = bedtimeSchedule[today] || DEFAULT_BEDTIME_SCHEDULE[today];
-              const bedtimeLimit = formatTime24to12(todayBedtimeCfg.bedtime);
-              const updated = calculateFallbackMasterPlan(tasks, newStrategy, startTime, includeCalendarInMasterPlan ? calendarEvents : [], bedtimeLimit);
-              setCurrentPlan(updated);
-            }
-          }}
           startTime={startTime}
           onChangeStartTime={(newTime) => {
             setStartTime(newTime);
@@ -498,7 +541,7 @@ export default function App() {
               const today = getTodayDayOfWeek();
               const todayBedtimeCfg = bedtimeSchedule[today] || DEFAULT_BEDTIME_SCHEDULE[today];
               const bedtimeLimit = formatTime24to12(todayBedtimeCfg.bedtime);
-              const updated = calculateFallbackMasterPlan(tasks, strategy, newTime, includeCalendarInMasterPlan ? calendarEvents : [], bedtimeLimit);
+              const updated = calculateFallbackMasterPlan(tasks, 'balanced', newTime, includeCalendarInMasterPlan ? calendarEvents : [], bedtimeLimit);
               setCurrentPlan(updated);
             }
           }}
@@ -513,27 +556,30 @@ export default function App() {
               onOpenAddTask={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
               onOpenBrainDump={() => setIsBrainDumpOpen(true)}
               onLoadPreset={handleLoadPreset}
+              onLoadStudentPreset={handleLoadStudentPreset}
+              onLoadWorkerPreset={handleLoadWorkerPreset}
               onEditTask={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }}
               onDeleteTask={handleDeleteTask}
               onClearAll={handleClearAll}
               onToggleSubtask={handleToggleSubtask}
+              onQuickAddTask={handleQuickAddTask}
             />
           </div>
 
           {/* Right Column: Master Plan Display (7 Cols) */}
           <div className="lg:col-span-7 space-y-4">
             {currentPlan ? (
-              <div id="master-plan-card" className="bg-slate-900/60 dark:bg-slate-900/60 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 rounded-2xl p-5 shadow-xl space-y-5">
+              <div id="master-plan-card" className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-md space-y-5 transition-colors">
                 {/* Master Plan Tab Bar */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 flex-wrap gap-2">
-                  <div className="flex items-center gap-1 bg-slate-950 dark:bg-slate-950 light:bg-slate-100 p-1 rounded-xl border border-slate-800 dark:border-slate-800 light:border-slate-200 text-xs">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 flex-wrap gap-2">
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
                     <button
                       id="tab-timeline"
                       onClick={() => setActiveTab('timeline')}
                       className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
                         activeTab === 'timeline'
                           ? 'bg-indigo-600 text-white shadow-md'
-                          : 'text-slate-400 hover:text-slate-200 dark:text-slate-400 light:text-slate-600'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                       }`}
                     >
                       <ListOrdered className="w-3.5 h-3.5" />
@@ -546,7 +592,7 @@ export default function App() {
                       className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
                         activeTab === 'matrix'
                           ? 'bg-indigo-600 text-white shadow-md'
-                          : 'text-slate-400 hover:text-slate-200 dark:text-slate-400 light:text-slate-600'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                       }`}
                     >
                       <Grid2X2 className="w-3.5 h-3.5" />
@@ -559,7 +605,7 @@ export default function App() {
                       className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all ${
                         activeTab === 'reasoning'
                           ? 'bg-indigo-600 text-white shadow-md'
-                          : 'text-slate-400 hover:text-slate-200 dark:text-slate-400 light:text-slate-600'
+                          : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                       }`}
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -572,10 +618,10 @@ export default function App() {
                     <button
                       id="btn-export-plan"
                       onClick={handleExportPlan}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 dark:bg-slate-800 light:bg-slate-100 hover:bg-slate-700 text-slate-300 dark:text-slate-300 light:text-slate-700 text-xs font-medium border border-slate-700 dark:border-slate-700 light:border-slate-300 flex items-center gap-1.5 transition-colors"
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-colors"
                       title="Download Markdown Plan"
                     >
-                      <Download className="w-3.5 h-3.5 text-slate-400" />
+                      <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                       <span>Export Plan</span>
                     </button>
 
@@ -615,25 +661,43 @@ export default function App() {
                 )}
               </div>
             ) : (
-              <div id="no-plan-placeholder" className="bg-slate-900/40 dark:bg-slate-900/40 light:bg-white border border-dashed border-slate-800 dark:border-slate-800 light:border-slate-300 rounded-2xl p-12 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto">
-                  <Sparkles className="w-6 h-6 text-indigo-400" />
+              <div id="no-plan-placeholder" className="bg-slate-900/60 border border-dashed border-indigo-500/30 rounded-3xl p-10 text-center space-y-4 my-2 transition-all backdrop-blur-md">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-500/20 via-indigo-500/20 to-rose-500/20 border border-amber-500/30 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+                  <Sparkles className="w-7 h-7 text-amber-400 animate-bounce" />
                 </div>
-                <h3 className="text-base font-bold dark:text-white light:text-slate-900">
-                  No Master Plan Created Yet
+                <h3 className="text-lg font-black font-fun text-white">
+                  {tasks.length === 0 ? 'Your Schedule Canvas' : 'Ready to Craft Your Day!'}
                 </h3>
-                <p className="text-xs text-slate-400 dark:text-slate-400 light:text-slate-600 max-w-md mx-auto">
-                  Add work tasks on the left, pick your reasoning strategy, and click "Create Master Plan" to generate your optimized execution sequence.
+                <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  {tasks.length === 0
+                    ? 'Add a task on the left or pick a starter task to auto-generate your time-blocked, stress-free schedule!'
+                    : 'You have tasks ready in your queue! Click below to let Kompast build your optimized schedule.'
+                  }
                 </p>
-                <button
-                  id="placeholder-btn-generate"
-                  onClick={handleGeneratePlan}
-                  disabled={tasks.length === 0}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/20 inline-flex items-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-amber-300" />
-                  <span>Generate Master Plan</span>
-                </button>
+                {tasks.length > 0 && (
+                  <button
+                    id="placeholder-btn-generate"
+                    onClick={handleGeneratePlan}
+                    disabled={isGenerating}
+                    className={`px-6 py-3 rounded-2xl text-xs font-black shadow-lg inline-flex items-center gap-2 active:scale-95 transition-all ${
+                      isGenerating
+                        ? 'bg-indigo-950 text-amber-300 border border-amber-500/50 shadow-amber-500/20 animate-pulse cursor-not-allowed'
+                        : 'bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white shadow-amber-500/20'
+                    }`}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
+                        <span>Loading... {generationProgress}%</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+                        <span>Generate Schedule</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -641,10 +705,10 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer id="app-footer" className="bg-slate-950 dark:bg-slate-950 light:bg-slate-100 border-t border-slate-900 dark:border-slate-900 light:border-slate-200 py-6 text-center text-xs text-slate-500">
+      <footer id="app-footer" className="bg-slate-950/80 border-t border-indigo-500/20 py-5 text-center text-xs text-slate-400 transition-colors backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between flex-wrap gap-2">
-          <span>Master Plan AI Task Prioritizer & Intuitive Reasoning Engine</span>
-          <span className="text-slate-600 dark:text-slate-600 light:text-slate-400">Powered by Gemini 3.6 Flash</span>
+          <span className="font-extrabold font-fun text-amber-300">Kompast — Schedule Planner</span>
+          <span className="text-slate-500">Powered by Gemini 3.6 Flash</span>
         </div>
       </footer>
 
@@ -686,11 +750,18 @@ export default function App() {
       <FocusRunnerModal
         isOpen={isFocusRunnerOpen}
         onClose={() => setIsFocusRunnerOpen(false)}
-        plan={currentPlan || calculateFallbackMasterPlan(tasks, strategy, startTime)}
+        plan={currentPlan || calculateFallbackMasterPlan(tasks, 'balanced', startTime)}
         tasksMap={tasksMap}
         completedTaskIds={completedTaskIds}
         onToggleTaskCompleted={handleToggleTaskCompleted}
         onToggleSubtask={handleToggleSubtask}
+      />
+
+      <LogoSelectorModal
+        isOpen={isLogoModalOpen}
+        currentLogo={selectedLogoId}
+        onSelectLogo={handleSelectLogo}
+        onClose={() => setIsLogoModalOpen(false)}
       />
 
       <PlanAssistantDrawer
@@ -702,4 +773,5 @@ export default function App() {
     </div>
   );
 }
+
 

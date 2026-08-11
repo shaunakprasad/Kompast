@@ -1,5 +1,125 @@
 import { Task, MasterPlanStrategy, StrategyOption } from '../types';
 
+export const STUDENT_TASKS: Task[] = [
+  {
+    id: 'st-1',
+    title: 'Study for Computer Science Midterm Exam',
+    description: 'Review lecture slides on Graph Algorithms, Binary Trees, and Big-O Time Complexity.',
+    importance: 'critical',
+    estimatedMinutes: 120,
+    deadline: 'Tomorrow 10:00 AM',
+    category: 'Academics',
+    energyLevel: 'high',
+    dependencies: [],
+    subtasks: [
+      { id: 'sub-st1', title: 'Solve 5 practice tree traversal problems', completed: false },
+      { id: 'sub-st2', title: 'Create formula cheat sheet', completed: false }
+    ],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'st-2',
+    title: 'Submit Economics Problem Set on Canvas',
+    description: 'Complete market equilibrium graphs and upload PDF submission.',
+    importance: 'high',
+    estimatedMinutes: 60,
+    deadline: 'Today 11:59 PM',
+    category: 'Assignments',
+    energyLevel: 'medium',
+    dependencies: [],
+    subtasks: [],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'st-3',
+    title: 'Group Project Coordination Zoom Call',
+    description: 'Sync with group members to divide presentation slides and assign research topics.',
+    importance: 'medium',
+    estimatedMinutes: 45,
+    category: 'Collaboration',
+    energyLevel: 'medium',
+    dependencies: [],
+    subtasks: [],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'st-4',
+    title: 'Read Chapter 4 for Psychology Seminar',
+    description: 'Annotate key study findings on memory retention mechanisms.',
+    importance: 'low',
+    estimatedMinutes: 40,
+    category: 'Reading',
+    energyLevel: 'low',
+    dependencies: [],
+    subtasks: [],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  }
+];
+
+export const WORKER_9TO5_TASKS: Task[] = [
+  {
+    id: 'w-1',
+    title: 'Prepare Q3 Quarterly Strategy & Roadmap Deck',
+    description: 'Synthesize key engineering metrics, deliverables, and timeline milestones for executive review.',
+    importance: 'critical',
+    estimatedMinutes: 120,
+    deadline: 'Today 3:00 PM',
+    category: 'Strategy',
+    energyLevel: 'high',
+    dependencies: [],
+    subtasks: [
+      { id: 'sub-w1', title: 'Outline top 3 strategic initiatives', completed: false },
+      { id: 'sub-w2', title: 'Add budget headcount estimates', completed: false }
+    ],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'w-2',
+    title: 'Daily Morning Standup & Team Sync',
+    description: 'Share sprint updates, flag blockers, and align on daily priorities with team.',
+    importance: 'high',
+    estimatedMinutes: 20,
+    deadline: 'Today 9:30 AM',
+    category: 'Meetings',
+    energyLevel: 'medium',
+    dependencies: [],
+    subtasks: [],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'w-3',
+    title: 'Batch Process Client & Stakeholder Emails',
+    description: 'Inbox Zero sweep: reply to urgent partner inquiries and clear pending approvals.',
+    importance: 'medium',
+    estimatedMinutes: 30,
+    category: 'Communication',
+    energyLevel: 'low',
+    dependencies: [],
+    subtasks: [],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'w-4',
+    title: 'Review Engineering Pull Requests & Design Specs',
+    description: 'Thorough code review for frontend performance updates and security patches.',
+    importance: 'high',
+    estimatedMinutes: 60,
+    category: 'Development',
+    energyLevel: 'high',
+    dependencies: [],
+    subtasks: [],
+    status: 'todo',
+    createdAt: new Date().toISOString()
+  }
+];
+
 export const SAMPLE_TASKS: Task[] = [
   {
     id: 'task-1',

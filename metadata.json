@@ -1,5 +1,5 @@
 {
-  "name": "Ontask",
+  "name": "Kompast",
   "description": "An intuitive AI task strategist and scheduling engine that crafts optimized master execution plans based on energy, deadlines, bedtime schedules, and Google Calendar sync.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

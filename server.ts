@@ -266,12 +266,8 @@ CRITICAL TIMELINE & CONSTRAINTS:
 1. Bedtime Constraint: The user's bedtime for today is set to ${bedtimeLimit}. NO WORK TASKS should be scheduled after ${bedtimeLimit}. If total tasks exceed available hours before bedtime, schedule what fits and explicitly note in 'bedtimeConstraintAlert' how many tasks were pushed to tomorrow to protect sleep.
 2. Google Calendar Constraints: The user has existing calendar events: ${JSON.stringify(calendarEvents)}. Treat these as HARD BUSY TIME BLOCKS. Work tasks MUST fit around these calendar event slots without overlapping.
 
-Consider the user's strategy preference:
-- 'balanced': Deep balance of high-impact importance, duration length, deadlines, dependencies, and burnout prevention.
-- 'eat_the_frog': Put the heaviest/highest importance tasks first while focus energy is at peak.
-- 'quick_wins': Put quick, high-impact short tasks first to clear queue velocity and build psychological momentum.
-- 'deadline_first': Prioritize tasks with imminent deadlines and time constraints.
-- 'energy_flow': Match high-focus tasks in the early blocks and low-focus administrative tasks in afternoon slots.
+Optimization Goal:
+Automatically create a smart, stress-free sequence balancing high-impact importance, task durations, imminent deadlines, task dependencies, energy management, and cognitive burnout prevention.
 
 Intuitive Reasoning Guidelines:
 1. Assess task Importance vs Length (Duration). Short, critical tasks are Quick Wins. Long, critical tasks are Major Projects. Short, low-importance tasks are Fill-ins. Long, low-importance tasks are Hard Slogs.
@@ -279,10 +275,10 @@ Intuitive Reasoning Guidelines:
 3. Schedule precise start and end times starting from ${startTime}, accounting for task durations, skipping over Google Calendar event blocks, and inserting 10-15 minute cognitive recovery breaks after intense sessions (>60 minutes).
 4. Provide transparent, compelling intuitive reasoning for EVERY single task's placement (e.g. "Scheduled #1 because it resolves a critical blocker with short duration before your 11:00 AM Team Sync.")
 5. Assign a priority score (0-100) reflecting its strategic ranking.
-6. Provide an Executive Summary explaining the overall tactical strategy of this master plan.
+6. Provide an Executive Summary explaining the overall design of this master plan.
 7. Outline 3 Key Strategic Principles applied and 3 Productivity Insights tailored specifically to these tasks.`;
 
-    const promptText = `Tasks to analyze and sequence (Start time: ${startTime}, Strategy: ${strategy}, Bedtime limit: ${bedtimeLimit}):
+    const promptText = `Tasks to analyze and sequence (Start time: ${startTime}, Bedtime limit: ${bedtimeLimit}):
 Tasks: ${JSON.stringify(tasks, null, 2)}
 Calendar Events: ${JSON.stringify(calendarEvents, null, 2)}`;
 
@@ -374,9 +370,9 @@ app.post("/api/quick-reasoning-chat", async (req, res) => {
     }
 
     const ai = getAIClient();
-    const systemInstruction = `You are MasterPlan AI Assistant, an empathetic, sharp productivity coach. The user is asking a question or requesting a adjustment about their tasks or master plan.
+    const systemInstruction = `You are Northy, the quirky, clever, and empathetic Kompast schedule assistant. The user is asking a question or requesting an adjustment about their tasks or master plan.
 
-Answer with intuitive clarity, practical time management logic, and actionable suggestions. Keep response engaging, concise, and formatted nicely in markdown.`;
+Answer with intuitive clarity, practical time management logic, and friendly actionable suggestions. Keep responses concise, helpful, and nicely formatted in markdown.`;
 
     const promptText = `User Tasks:
 ${JSON.stringify(tasks, null, 2)}

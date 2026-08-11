@@ -1,107 +1,61 @@
 import React from 'react';
-import { Sparkles, Zap, Flame, Clock, BatteryCharging, Check } from 'lucide-react';
-import { MasterPlanStrategy } from '../types';
-import { STRATEGY_OPTIONS } from '../data/presetTasks';
+import { Sparkles, Clock } from 'lucide-react';
 
 interface StrategySelectorProps {
-  selectedStrategy: MasterPlanStrategy;
-  onSelectStrategy: (strategy: MasterPlanStrategy) => void;
+  selectedStrategy?: string;
+  onSelectStrategy?: (strategy: any) => void;
   startTime: string;
   onChangeStartTime: (time: string) => void;
 }
 
 export const StrategySelector: React.FC<StrategySelectorProps> = ({
-  selectedStrategy,
-  onSelectStrategy,
   startTime,
   onChangeStartTime
 }) => {
-  const getIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'Sparkles': return <Sparkles className="w-4 h-4 text-indigo-400" />;
-      case 'Zap': return <Zap className="w-4 h-4 text-amber-400" />;
-      case 'Flame': return <Flame className="w-4 h-4 text-rose-400" />;
-      case 'Clock': return <Clock className="w-4 h-4 text-cyan-400" />;
-      case 'BatteryCharging': return <BatteryCharging className="w-4 h-4 text-emerald-400" />;
-      default: return <Sparkles className="w-4 h-4 text-indigo-400" />;
-    }
-  };
-
   return (
-    <div id="strategy-selector-container" className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-xl text-slate-100">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4 flex-wrap gap-3">
-        <div>
-          <h2 id="strategy-heading" className="text-sm font-bold text-white flex items-center gap-2">
-            Reasoning Strategy & Start Time
-          </h2>
-          <p className="text-xs text-slate-400">
-            Select how the AI balances task importance, length, and energy.
-          </p>
+    <div id="strategy-selector-container" className="bg-slate-900/80 border border-indigo-500/30 rounded-3xl p-4 shadow-xl flex items-center justify-between gap-4 flex-wrap backdrop-blur-md transition-colors text-slate-100">
+      {/* AI Optimizer Badge */}
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-2xl bg-indigo-950 border border-indigo-500/40 flex items-center justify-center shrink-0 shadow-md">
+          <Sparkles className="w-4 h-4 text-amber-400" />
         </div>
-
-        {/* Start Time Config */}
-        <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-          <Clock className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="text-xs font-medium text-slate-300">Plan Start Time:</span>
-          <select
-            id="select-start-time"
-            value={startTime}
-            onChange={(e) => onChangeStartTime(e.target.value)}
-            className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
-          >
-            <option value="08:00 AM">08:00 AM</option>
-            <option value="08:30 AM">08:30 AM</option>
-            <option value="09:00 AM">09:00 AM</option>
-            <option value="09:30 AM">09:30 AM</option>
-            <option value="10:00 AM">10:00 AM</option>
-            <option value="01:00 PM">01:00 PM</option>
-          </select>
+        <div>
+          <div className="text-xs font-black font-fun text-white flex items-center gap-2">
+            <span>Time-Blocking Engine</span>
+            <span className="text-[10px] font-extrabold text-emerald-300 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/40 shadow-xs">
+              Active
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 font-medium">
+            Orders tasks by priority, deadlines, and focus energy.
+          </p>
         </div>
       </div>
 
-      {/* Grid of strategies */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {STRATEGY_OPTIONS.map((opt) => {
-          const isSelected = selectedStrategy === opt.id;
-
-          return (
-            <div
-              key={opt.id}
-              id={`strategy-card-${opt.id}`}
-              onClick={() => onSelectStrategy(opt.id)}
-              className={`relative cursor-pointer rounded-xl p-3.5 border transition-all flex flex-col justify-between ${
-                isSelected
-                  ? 'bg-indigo-950/40 border-indigo-500 shadow-md shadow-indigo-500/10'
-                  : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/60'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                    {getIcon(opt.iconName)}
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                    isSelected
-                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
-                      : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {opt.badge}
-                  </span>
-                </div>
-
-                <h3 className="text-xs font-bold text-white mb-1 flex items-center justify-between">
-                  {opt.title}
-                  {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400" />}
-                </h3>
-
-                <p className="text-[11px] text-slate-400 leading-snug line-clamp-3">
-                  {opt.description}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+      {/* Start Time Config */}
+      <div className="flex items-center gap-2.5 bg-slate-950 border border-amber-500/40 px-3.5 py-2 rounded-2xl shrink-0 shadow-inner">
+        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+        <span className="text-xs font-extrabold font-fun text-slate-300">Schedule Start:</span>
+        <select
+          id="select-start-time"
+          value={startTime}
+          onChange={(e) => onChangeStartTime(e.target.value)}
+          className="bg-slate-900 text-amber-300 font-black text-xs font-fun px-3 py-1 rounded-xl border border-amber-500/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer transition-all"
+        >
+          <option value="07:00 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">07:00 AM</option>
+          <option value="07:30 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">07:30 AM</option>
+          <option value="08:00 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">08:00 AM</option>
+          <option value="08:30 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">08:30 AM</option>
+          <option value="09:00 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">09:00 AM</option>
+          <option value="09:30 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">09:30 AM</option>
+          <option value="10:00 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">10:00 AM</option>
+          <option value="11:00 AM" className="bg-slate-950 text-amber-200 font-extrabold py-1">11:00 AM</option>
+          <option value="12:00 PM" className="bg-slate-950 text-amber-200 font-extrabold py-1">12:00 PM</option>
+          <option value="01:00 PM" className="bg-slate-950 text-amber-200 font-extrabold py-1">01:00 PM</option>
+          <option value="02:00 PM" className="bg-slate-950 text-amber-200 font-extrabold py-1">02:00 PM</option>
+        </select>
       </div>
     </div>
   );
 };
+
