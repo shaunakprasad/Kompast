@@ -1,6 +1,6 @@
-# Ontask — Intuitive AI Task Strategist & Execution Engine
+# Kompast — Intuitive AI Task Strategist & Execution Engine
 
-**Ontask** is an intelligent reasoning task strategist and schedule optimizer powered by Google Gemini AI. It converts unstructured brain dumps, messy to-do lists, and fixed deadlines into time-blocked, prioritized master execution plans—tailored to your energy levels, bedtime schedule, and Google Calendar.
+**Kompast** is an intelligent reasoning task strategist and schedule optimizer powered by Google Gemini AI. It converts unstructured brain dumps, messy to-do lists, and fixed deadlines into time-blocked, prioritized master execution plans—tailored to your energy levels, bedtime schedule, and Google Calendar.
 
 ---
 
@@ -58,8 +58,8 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/ontask.git
-   cd ontask
+   git clone https://github.com/your-username/Kompast.git
+   cd Kompast
    ```
 
 2. **Install dependencies**:
@@ -83,7 +83,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 ## 🗓️ Google Calendar OAuth Setup Guide
 
-To enable Google Calendar sync in Ontask:
+To enable Google Calendar sync in Kompast:
 
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2. Create a project and enable the **Google Calendar API**.
