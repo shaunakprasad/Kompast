@@ -7,13 +7,15 @@ interface TimelineScheduleProps {
   tasksMap: Map<string, Task>;
   completedTaskIds: Set<string>;
   onToggleTaskCompleted: (taskId: string) => void;
+  onRequestComplete?: (task: Task) => void;
 }
 
 export const TimelineSchedule: React.FC<TimelineScheduleProps> = ({
   plan,
   tasksMap,
   completedTaskIds,
-  onToggleTaskCompleted
+  onToggleTaskCompleted,
+  onRequestComplete
 }) => {
   const getCategoryBadge = (cat: string) => {
     switch (cat) {
@@ -72,9 +74,17 @@ export const TimelineSchedule: React.FC<TimelineScheduleProps> = ({
               >
                 {/* Step circle indicator */}
                 <button
-                  onClick={() => onToggleTaskCompleted(pt.taskId)}
+                  onClick={() => {
+                    if (isCompleted) {
+                      onToggleTaskCompleted(pt.taskId);
+                    } else if (onRequestComplete && originalTask) {
+                      onRequestComplete(originalTask);
+                    } else {
+                      onToggleTaskCompleted(pt.taskId);
+                    }
+                  }}
                   className="absolute left-3.5 top-5 z-10 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 flex items-center justify-center hover:scale-110 transition-transform cursor-pointer"
-                  title={isCompleted ? "Mark incomplete" : "Mark completed"}
+                  title={isCompleted ? "Mark incomplete" : "Complete this task"}
                 >
                   {isCompleted ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-500/20" />

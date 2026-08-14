@@ -1,6 +1,23 @@
 import React from 'react';
-import { Sparkles, Brain, Plus, RefreshCw, Play, MessageSquare, Moon, Calendar, Compass } from 'lucide-react';
-import { MasterPlan } from '../types';
+import { 
+  Sparkles, 
+  Brain, 
+  Plus, 
+  RefreshCw, 
+  Play, 
+  MessageSquare, 
+  Moon, 
+  Calendar, 
+  Compass,
+  GraduationCap,
+  Briefcase,
+  BookOpen,
+  Rocket,
+  Palette,
+  Sliders,
+  UserCheck
+} from 'lucide-react';
+import { MasterPlan, UserPersonaProfile, UserRoleCategory } from '../types';
 
 interface HeaderProps {
   onOpenAddTask: () => void;
@@ -16,7 +33,33 @@ interface HeaderProps {
   onOpenBedtime: () => void;
   onOpenCalendar: () => void;
   isCalendarConnected: boolean;
+  activePersona: UserPersonaProfile | null;
+  onOpenFrameworkModal: () => void;
 }
+
+const getRoleIcon = (role?: UserRoleCategory) => {
+  switch (role) {
+    case 'university_student': return GraduationCap;
+    case 'high_school_student': return BookOpen;
+    case 'corporate_business': return Briefcase;
+    case 'startup_founder': return Rocket;
+    case 'freelancer_creative': return Palette;
+    default: return Sliders;
+  }
+};
+
+const getRoleLabel = (profile: UserPersonaProfile | null) => {
+  if (!profile) return 'Framework';
+  if (profile.customRoleTitle) return profile.customRoleTitle;
+  switch (profile.roleCategory) {
+    case 'university_student': return 'University';
+    case 'high_school_student': return 'High School';
+    case 'corporate_business': return '9-to-5 Work';
+    case 'startup_founder': return 'Founder';
+    case 'freelancer_creative': return 'Freelancer';
+    default: return 'Framework';
+  }
+};
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenAddTask,
@@ -30,8 +73,13 @@ export const Header: React.FC<HeaderProps> = ({
   currentPlan,
   onOpenBedtime,
   onOpenCalendar,
-  isCalendarConnected
+  isCalendarConnected,
+  activePersona,
+  onOpenFrameworkModal
 }) => {
+  const RoleIcon = getRoleIcon(activePersona?.roleCategory);
+  const roleLabel = getRoleLabel(activePersona);
+
   return (
     <header id="app-header" className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md border-b border-indigo-500/20 text-slate-100 shadow-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
@@ -52,6 +100,20 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Header Action Controls */}
         <div className="flex items-center gap-2">
+          {/* Persona / Framework Switcher Badge */}
+          <button
+            id="btn-framework-persona"
+            onClick={onOpenFrameworkModal}
+            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-2xl bg-slate-900/90 hover:bg-indigo-950/70 border border-indigo-500/30 hover:border-amber-500/40 text-xs font-bold text-slate-200 transition-all shadow-sm group"
+            title="Configure or Switch Schedule Framework"
+          >
+            <RoleIcon className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline font-fun text-[11px]">{roleLabel}</span>
+            <span className="text-[10px] text-indigo-300 font-extrabold bg-indigo-500/20 px-1.5 py-0.5 rounded-md border border-indigo-500/30">
+              Framework
+            </span>
+          </button>
+
           {/* Primary Action Button */}
           {hasTasks && (
             <button

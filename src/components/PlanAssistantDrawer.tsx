@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { X, Send, MessageSquare, Sparkles, RefreshCw, Bot, User } from 'lucide-react';
-import { MasterPlan, Task } from '../types';
+import { MasterPlan, Task, UserPersonaProfile } from '../types';
 
 interface PlanAssistantDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   tasks: Task[];
   currentPlan: MasterPlan | null;
+  userPersona?: UserPersonaProfile | null;
 }
 
 interface ChatMessage {
@@ -20,7 +21,8 @@ export const PlanAssistantDrawer: React.FC<PlanAssistantDrawerProps> = ({
   isOpen,
   onClose,
   tasks,
-  currentPlan
+  currentPlan,
+  userPersona
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -57,6 +59,7 @@ export const PlanAssistantDrawer: React.FC<PlanAssistantDrawerProps> = ({
         body: JSON.stringify({
           tasks,
           masterPlan: currentPlan,
+          userPersona,
           question
         })
       });

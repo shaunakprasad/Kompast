@@ -5,30 +5,38 @@ import { TaskCard } from './TaskCard';
 
 interface TaskListProps {
   tasks: Task[];
+  completedTaskIds?: Set<string>;
   onOpenAddTask: () => void;
   onOpenBrainDump: () => void;
   onLoadPreset: () => void;
   onLoadStudentPreset?: () => void;
   onLoadWorkerPreset?: () => void;
+  onOpenFrameworkModal?: () => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
   onClearAll: () => void;
   onToggleSubtask: (taskId: string, subtaskId: string) => void;
   onQuickAddTask?: (title: string) => void;
+  onRequestComplete?: (task: Task) => void;
+  onToggleComplete?: (task: Task) => void;
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
   tasks,
+  completedTaskIds = new Set(),
   onOpenAddTask,
   onOpenBrainDump,
   onLoadPreset,
   onLoadStudentPreset,
   onLoadWorkerPreset,
+  onOpenFrameworkModal,
   onEditTask,
   onDeleteTask,
   onClearAll,
   onToggleSubtask,
-  onQuickAddTask
+  onQuickAddTask,
+  onRequestComplete,
+  onToggleComplete
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -192,7 +200,18 @@ export const TaskList: React.FC<TaskListProps> = ({
             </div>
 
             <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800/60 w-full max-w-sm">
-              <span className="text-[11px] font-bold text-slate-400 block">Quick 1-Click Starter Schedules:</span>
+              {onOpenFrameworkModal && (
+                <button
+                  id="empty-btn-framework-wizard"
+                  onClick={onOpenFrameworkModal}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500/20 via-indigo-600/20 to-indigo-500/20 hover:from-amber-500/30 hover:to-indigo-500/30 text-amber-300 border border-amber-500/40 transition-all flex items-center justify-center gap-2 shadow-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  <span>Personalize Schedule Framework Wizard</span>
+                </button>
+              )}
+
+              <span className="text-[11px] font-bold text-slate-400 block pt-1">Or Quick 1-Click Starter Schedules:</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   id="empty-btn-student"
@@ -232,9 +251,12 @@ export const TaskList: React.FC<TaskListProps> = ({
             <TaskCard
               key={task.id}
               task={task}
+              isCompleted={completedTaskIds.has(task.id) || task.status === 'completed'}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
               onToggleSubtask={onToggleSubtask}
+              onRequestComplete={onRequestComplete}
+              onToggleComplete={onToggleComplete}
             />
           ))
         )}

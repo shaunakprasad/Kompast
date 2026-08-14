@@ -16,12 +16,16 @@ export function getTodayDayOfWeek(): DayOfWeek {
   return days[dayIndex];
 }
 
-export function formatTime24to12(time24: string): string {
-  if (!time24) return '10:30 PM';
-  const [hStr, mStr] = time24.split(':');
+export function formatTime24to12(time: string): string {
+  if (!time) return '10:30 PM';
+  const trimmed = time.trim();
+  if (trimmed.toUpperCase().includes('AM') || trimmed.toUpperCase().includes('PM')) {
+    return trimmed;
+  }
+  const [hStr, mStr] = trimmed.split(':');
   let h = parseInt(hStr, 10);
-  if (isNaN(h)) return time24;
-  const m = mStr || '00';
+  if (isNaN(h)) return trimmed;
+  const m = (mStr || '00').replace(/[^0-9]/g, '').padStart(2, '0');
   const ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12;
   if (h === 0) h = 12;

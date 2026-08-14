@@ -19,8 +19,17 @@ import {
   Moon
 } from 'lucide-react';
 
-import { Task, MasterPlan, MasterPlanStrategy, BedtimeSchedule, GoogleCalendarEvent, AppTheme, LogoId } from './types';
-import { SAMPLE_TASKS, STUDENT_TASKS, WORKER_9TO5_TASKS } from './data/presetTasks';
+import { 
+  Task, 
+  MasterPlan, 
+  MasterPlanStrategy, 
+  BedtimeSchedule, 
+  GoogleCalendarEvent, 
+  AppTheme,
+  UserPersonaProfile,
+  ProductivityFramework
+} from './types';
+import { SAMPLE_TASKS, STUDENT_TASKS, WORKER_9TO5_TASKS, PRESET_FRAMEWORKS } from './data/presetTasks';
 import { calculateFallbackMasterPlan } from './utils/fallbackPlanner';
 import { DEFAULT_BEDTIME_SCHEDULE, getTodayDayOfWeek, formatTime24to12 } from './data/defaultBedtime';
 
@@ -36,7 +45,10 @@ import { FocusRunnerModal } from './components/FocusRunnerModal';
 import { PlanAssistantDrawer } from './components/PlanAssistantDrawer';
 import { BedtimeModal } from './components/BedtimeModal';
 import { CalendarConnectModal } from './components/CalendarConnectModal';
-import { LogoSelectorModal } from './components/LogoSelectorModal';
+import { PersonaFrameworkModal } from './components/PersonaFrameworkModal';
+import { TaskCompletionModal } from './components/TaskCompletionModal';
+import { CelebrationToast, ComplimentData } from './components/CelebrationToast';
+import { getRandomCompliment } from './utils/compliments';
 
 export default function App() {
   useEffect(() => {
@@ -44,19 +56,24 @@ export default function App() {
     document.documentElement.classList.remove('light');
   }, []);
 
-  const [selectedLogoId, setSelectedLogoId] = useState<LogoId>(() => {
-    return (localStorage.getItem('kompast_selected_logo') as LogoId) || 'pulse';
+  // User Persona & Framework state
+  const [userPersona, setUserPersona] = useState<UserPersonaProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem('kompast_user_persona');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
-  const [isLogoModalOpen, setIsLogoModalOpen] = useState<boolean>(() => {
-    return !localStorage.getItem('kompast_selected_logo');
+  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('kompast_user_persona');
+      return !saved; // Automatically show persona prompt on first visit
+    } catch {
+      return false;
+    }
   });
-
-  const handleSelectLogo = (logoId: LogoId) => {
-    setSelectedLogoId(logoId);
-    localStorage.setItem('kompast_selected_logo', logoId);
-  };
-
 
   // Bedtime Schedule state
   const [bedtimeSchedule, setBedtimeSchedule] = useState<BedtimeSchedule>(() => {
@@ -123,6 +140,9 @@ export default function App() {
   const [isFocusRunnerOpen, setIsFocusRunnerOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskToComplete, setTaskToComplete] = useState<Task | null>(null);
+  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+  const [complimentData, setComplimentData] = useState<ComplimentData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [notification, setNotification] = useState<string | null>(null);
@@ -359,15 +379,95 @@ export default function App() {
   };
 
   const handleToggleTaskCompleted = (taskId: string) => {
-    setCompletedTaskIds(prev => {
-      const next = new Set(prev);
-      if (next.has(taskId)) {
+    const isAlreadyCompleted = completedTaskIds.has(taskId);
+    if (isAlreadyCompleted) {
+      setCompletedTaskIds(prev => {
+        const next = new Set(prev);
         next.delete(taskId);
+        return next;
+      });
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'todo' } : t));
+      showNotification('Task marked as active.');
+    } else {
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        setTaskToComplete(task);
+        setIsCompletionModalOpen(true);
       } else {
-        next.add(taskId);
+        setCompletedTaskIds(prev => new Set(prev).add(taskId));
       }
-      return next;
-    });
+    }
+  };
+
+  const handleRequestComplete = (task: Task) => {
+    setTaskToComplete(task);
+    setIsCompletionModalOpen(true);
+  };
+
+  const handleConfirmComplete = (task: Task) => {
+    // 1. Mark as completed in state and storage
+    setCompletedTaskIds(prev => new Set(prev).add(task.id));
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'completed' } : t));
+    setIsCompletionModalOpen(false);
+    setTaskToComplete(null);
+
+    // 2. Trigger celebratory compliment toast
+    const compliment = getRandomCompliment(task.title);
+    setComplimentData(compliment);
+  };
+
+  const handleToggleCompleteDirect = (task: Task) => {
+    if (completedTaskIds.has(task.id) || task.status === 'completed') {
+      setCompletedTaskIds(prev => {
+        const next = new Set(prev);
+        next.delete(task.id);
+        return next;
+      });
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'todo' } : t));
+      showNotification(`Reopened task "${task.title}".`);
+    } else {
+      handleRequestComplete(task);
+    }
+  };
+
+  // Persona & Framework Handler
+  const handleApplyFramework = (
+    framework: ProductivityFramework,
+    profile: UserPersonaProfile,
+    loadPresetTasks: boolean
+  ) => {
+    setUserPersona(profile);
+    try {
+      localStorage.setItem('kompast_user_persona', JSON.stringify(profile));
+    } catch (e) {
+      console.warn('Could not save persona profile:', e);
+    }
+
+    if (framework.recommendedStartTime) {
+      setStartTime(framework.recommendedStartTime);
+    }
+
+    if (loadPresetTasks && framework.starterTasks && framework.starterTasks.length > 0) {
+      setTasks(framework.starterTasks);
+      try {
+        localStorage.setItem('master_plan_tasks', JSON.stringify(framework.starterTasks));
+      } catch (e) {
+        console.warn('Could not save framework tasks:', e);
+      }
+      const today = getTodayDayOfWeek();
+      const todayBedtimeCfg = bedtimeSchedule[today] || DEFAULT_BEDTIME_SCHEDULE[today];
+      const bedtimeLimit = formatTime24to12(todayBedtimeCfg.bedtime);
+      const newPlan = calculateFallbackMasterPlan(
+        framework.starterTasks,
+        framework.recommendedStrategy || 'balanced',
+        framework.recommendedStartTime || startTime,
+        includeCalendarInMasterPlan ? calendarEvents : [],
+        bedtimeLimit
+      );
+      setCurrentPlan(newPlan);
+    }
+
+    showNotification(`Applied ${framework.name} framework!`);
   };
 
   // Master Plan Generation using AI
@@ -402,7 +502,8 @@ export default function App() {
           tasks,
           startTime,
           calendarEvents: activeCalendarEvents,
-          bedtimeLimit
+          bedtimeLimit,
+          userPersona
         })
       });
 
@@ -526,8 +627,8 @@ export default function App() {
         onOpenBedtime={() => { setIsFirstTimeBedtime(false); setIsBedtimeModalOpen(true); }}
         onOpenCalendar={() => setIsCalendarModalOpen(true)}
         isCalendarConnected={!!calendarTokens}
-        selectedLogoId={selectedLogoId}
-        onOpenLogoSelector={() => setIsLogoModalOpen(true)}
+        activePersona={userPersona}
+        onOpenFrameworkModal={() => setIsPersonaModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -553,16 +654,20 @@ export default function App() {
           <div className="lg:col-span-5 h-[620px] lg:h-[720px]">
             <TaskList
               tasks={tasks}
+              completedTaskIds={completedTaskIds}
               onOpenAddTask={() => { setEditingTask(null); setIsTaskModalOpen(true); }}
               onOpenBrainDump={() => setIsBrainDumpOpen(true)}
               onLoadPreset={handleLoadPreset}
               onLoadStudentPreset={handleLoadStudentPreset}
               onLoadWorkerPreset={handleLoadWorkerPreset}
+              onOpenFrameworkModal={() => setIsPersonaModalOpen(true)}
               onEditTask={(task) => { setEditingTask(task); setIsTaskModalOpen(true); }}
               onDeleteTask={handleDeleteTask}
               onClearAll={handleClearAll}
               onToggleSubtask={handleToggleSubtask}
               onQuickAddTask={handleQuickAddTask}
+              onRequestComplete={handleRequestComplete}
+              onToggleComplete={handleToggleCompleteDirect}
             />
           </div>
 
@@ -643,6 +748,7 @@ export default function App() {
                     tasksMap={tasksMap}
                     completedTaskIds={completedTaskIds}
                     onToggleTaskCompleted={handleToggleTaskCompleted}
+                    onRequestComplete={handleRequestComplete}
                   />
                 )}
 
@@ -757,18 +863,37 @@ export default function App() {
         onToggleSubtask={handleToggleSubtask}
       />
 
-      <LogoSelectorModal
-        isOpen={isLogoModalOpen}
-        currentLogo={selectedLogoId}
-        onSelectLogo={handleSelectLogo}
-        onClose={() => setIsLogoModalOpen(false)}
-      />
-
       <PlanAssistantDrawer
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         tasks={tasks}
         currentPlan={currentPlan}
+        userPersona={userPersona}
+      />
+
+      <PersonaFrameworkModal
+        isOpen={isPersonaModalOpen}
+        onClose={() => setIsPersonaModalOpen(false)}
+        currentProfile={userPersona}
+        onApplyFramework={handleApplyFramework}
+        isFirstTime={!userPersona?.hasCompletedOnboarding}
+      />
+
+      {/* Task Completion Pop-up Confirmation Modal */}
+      <TaskCompletionModal
+        isOpen={isCompletionModalOpen}
+        task={taskToComplete}
+        onConfirm={handleConfirmComplete}
+        onClose={() => {
+          setIsCompletionModalOpen(false);
+          setTaskToComplete(null);
+        }}
+      />
+
+      {/* Celebratory Uplifting Compliment Toast */}
+      <CelebrationToast
+        data={complimentData}
+        onDismiss={() => setComplimentData(null)}
       />
     </div>
   );

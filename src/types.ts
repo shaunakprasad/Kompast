@@ -26,6 +26,54 @@ export interface GoogleCalendarEvent {
 
 export type AppTheme = 'dark' | 'light';
 
+export type UserRoleCategory = 
+  | 'university_student' 
+  | 'high_school_student' 
+  | 'corporate_business' 
+  | 'startup_founder' 
+  | 'freelancer_creative' 
+  | 'custom';
+
+export type FocusPeakPeriod = 'morning' | 'afternoon' | 'evening' | 'flexible';
+export type BreakStyle = 'pomodoro_25' | 'deep_50' | 'ultradian_90' | 'flexible';
+
+export interface UserPersonaProfile {
+  roleCategory: UserRoleCategory;
+  customRoleTitle?: string;
+  institutionOrCompany?: string;
+  workStartHour: string; // e.g. "08:30 AM"
+  workEndHour: string;   // e.g. "05:30 PM"
+  focusPeak: FocusPeakPeriod;
+  breakStyle: BreakStyle;
+  primaryGoal?: string;
+  hasCompletedOnboarding: boolean;
+  activeFrameworkId?: string;
+}
+
+export interface SchedulePhase {
+  phase: string;
+  timeRange: string;
+  focusType: string;
+  tip: string;
+}
+
+export interface ProductivityFramework {
+  id: string;
+  name: string;
+  badge: string;
+  roleCategory: UserRoleCategory;
+  summary: string;
+  idealFor: string;
+  recommendedStrategy: MasterPlanStrategy;
+  recommendedStartTime: string;
+  suggestedBedtime: {
+    bedtime: string;
+    wakeTime: string;
+  };
+  scheduleStructure: SchedulePhase[];
+  starterTasks: Task[];
+}
+
 
 export interface SubTask {
   id: string;

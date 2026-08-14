@@ -251,20 +251,38 @@ User Task Brain Dump:
 // 2. Master Plan Generator Endpoint
 app.post("/api/generate-master-plan", async (req, res) => {
   try {
-    const { tasks, strategy = "balanced", startTime = "09:00 AM", calendarEvents = [], bedtimeLimit = "10:30 PM" } = req.body;
+    const { 
+      tasks, 
+      strategy = "balanced", 
+      startTime = "09:00 AM", 
+      calendarEvents = [], 
+      bedtimeLimit = "10:30 PM",
+      userPersona = null 
+    } = req.body;
     if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
       return res.status(400).json({ error: "At least one task is required to generate a master plan." });
     }
 
     const ai = getAIClient();
 
+    const personaContext = userPersona ? `
+USER PERSONA & WORK HOURS FRAMEWORK:
+- Role / Archetype: ${userPersona.roleCategory} ${userPersona.customRoleTitle ? `(${userPersona.customRoleTitle})` : ''}
+- Organization / Institution: ${userPersona.institutionOrCompany || 'Not specified'}
+- Daily Working Window: ${userPersona.workStartHour || startTime} to ${userPersona.workEndHour || 'End of Day'}
+- Peak Cognitive Focus Window: ${userPersona.focusPeak || 'morning'}
+- Break / Focus Rhythm Preference: ${userPersona.breakStyle || 'deep_50'}
+- Primary Productivity Goal: ${userPersona.primaryGoal || 'Balanced execution'}
+` : '';
+
     const systemInstruction = `You are MasterPlan AI, a world-class productivity strategist specializing in intuitive reasoning, cognitive load management, priority matrix calculations, time-boxing, and calendar integration.
 
 Your goal: Take the list of work tasks and perform deep intuitive reasoning to generate a Master Execution Plan.
-
+${personaContext}
 CRITICAL TIMELINE & CONSTRAINTS:
 1. Bedtime Constraint: The user's bedtime for today is set to ${bedtimeLimit}. NO WORK TASKS should be scheduled after ${bedtimeLimit}. If total tasks exceed available hours before bedtime, schedule what fits and explicitly note in 'bedtimeConstraintAlert' how many tasks were pushed to tomorrow to protect sleep.
 2. Google Calendar Constraints: The user has existing calendar events: ${JSON.stringify(calendarEvents)}. Treat these as HARD BUSY TIME BLOCKS. Work tasks MUST fit around these calendar event slots without overlapping.
+3. User Work Hours & Framework: Tailor the sequence and breaks to respect their working hours (${userPersona?.workStartHour || startTime} to ${userPersona?.workEndHour || 'evening'}).
 
 Optimization Goal:
 Automatically create a smart, stress-free sequence balancing high-impact importance, task durations, imminent deadlines, task dependencies, energy management, and cognitive burnout prevention.
@@ -364,13 +382,15 @@ Calendar Events: ${JSON.stringify(calendarEvents, null, 2)}`;
 // 3. AI Plan Assistant / Reasoning Chat Endpoint
 app.post("/api/quick-reasoning-chat", async (req, res) => {
   try {
-    const { tasks, masterPlan, question } = req.body;
+    const { tasks, masterPlan, question, userPersona } = req.body;
     if (!question) {
       return res.status(400).json({ error: "Question is required." });
     }
 
     const ai = getAIClient();
-    const systemInstruction = `You are Northy, the quirky, clever, and empathetic Kompast schedule assistant. The user is asking a question or requesting an adjustment about their tasks or master plan.
+    const personaContext = userPersona ? `The user is a ${userPersona.roleCategory}${userPersona.customRoleTitle ? ` (${userPersona.customRoleTitle})` : ''} working from ${userPersona.workStartHour || 'morning'} to ${userPersona.workEndHour || 'evening'}. Institution/Company: ${userPersona.institutionOrCompany || 'N/A'}. Peak energy: ${userPersona.focusPeak || 'morning'}.` : '';
+
+    const systemInstruction = `You are Northy, the quirky, clever, and empathetic Kompast schedule assistant. The user is asking a question or requesting an adjustment about their tasks or master plan. ${personaContext}
 
 Answer with intuitive clarity, practical time management logic, and friendly actionable suggestions. Keep responses concise, helpful, and nicely formatted in markdown.`;
 
